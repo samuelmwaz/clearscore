@@ -1,0 +1,193 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ClearScore Lodge Manager Pro</title>
+<style>
+:root{--ink:#14211b;--pine:#1f3d33;--brass:#b8893b;--bg:#f4f1ea;--line:#e3ddd0;--mut:#6b7a72;--ok:#2f8f5b;--bad:#c2410c;--warn:#d9a21b}
+*{box-sizing:border-box;margin:0}body{font:14px/1.45 system-ui,"Segoe UI",sans-serif;background:var(--bg);color:var(--ink)}
+h1,h2,h3,.big{font-family:Georgia,"Times New Roman",serif}
+header{background:var(--pine);color:#fff;position:sticky;top:0;z-index:20}
+.top{display:flex;justify-content:space-between;align-items:center;padding:10px 18px;gap:10px;flex-wrap:wrap}
+.top h1{font-size:18px;letter-spacing:.3px}.top small{color:#b9c9c0}
+nav{display:flex;overflow-x:auto;background:#17302a;padding:0 10px}
+nav button{background:none;border:0;border-bottom:3px solid transparent;color:#b9c9c0;padding:11px 14px;cursor:pointer;font:600 13px inherit;white-space:nowrap}
+nav button.on{color:#fff;border-color:var(--brass)}.bd{background:var(--bad);color:#fff;border-radius:9px;padding:0 6px;margin-left:6px;font-size:11px}
+main{max-width:1200px;margin:0 auto;padding:18px}
+.card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px}
+.grid{display:grid;gap:14px}.g4{grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}.g2{grid-template-columns:2fr 1fr}
+@media(max-width:800px){.g2{grid-template-columns:1fr}}
+.kpi small{color:var(--mut);text-transform:uppercase;font-size:11px;font-weight:700;letter-spacing:.5px}.kpi .big{font-size:26px;margin-top:2px}
+.ok{color:var(--ok)}.bad{color:var(--bad)}.mut{color:var(--mut)}.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.sp{justify-content:space-between}
+button.b,.b{background:var(--pine);color:#fff;border:0;border-radius:8px;padding:8px 14px;font:600 13px inherit;cursor:pointer}
+.b.alt{background:#fff;color:var(--pine);border:1px solid var(--line)}.b.red{background:var(--bad)}.b.gold{background:var(--brass)}.b:hover{filter:brightness(1.1)}.b.sm{padding:4px 9px;font-size:12px}
+input,select,textarea{width:100%;border:1px solid #cfc8b8;border-radius:8px;padding:8px 10px;font:inherit;background:#fff}
+input:focus,select:focus{outline:2px solid var(--brass);outline-offset:0}label{display:block;font-size:11px;font-weight:700;text-transform:uppercase;color:#42524a;margin:10px 0 4px}
+table{width:100%;border-collapse:collapse}th{background:#faf8f3;font-size:11px;text-transform:uppercase;color:var(--mut);text-align:left;padding:10px}td{padding:10px;border-top:1px solid var(--line)}
+.tw{overflow-x:auto}.r{text-align:right}.c{text-align:center}
+.rooms{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
+.room{cursor:pointer;border-top:6px solid var(--ok);padding:12px}.room:hover{box-shadow:0 4px 14px #0001}.room.Occupied{border-color:var(--bad)}.room.Cleaning{border-color:var(--warn)}
+.tag{font-size:10px;font-weight:800;text-transform:uppercase;padding:2px 8px;border-radius:9px;background:#e8f3ec;color:var(--ok)}.tag.Occupied{background:#fdece3;color:var(--bad)}.tag.Cleaning{background:#fbf1d6;color:#8a6700}
+.alert{background:#fdece3;border-left:4px solid var(--bad);padding:10px 14px;border-radius:6px;margin-bottom:12px}.alert.y{background:#fbf1d6;border-color:var(--warn)}
+.modal{position:fixed;inset:0;background:#0009;display:none;align-items:center;justify-content:center;padding:14px;z-index:50}.modal.on{display:flex}
+.modal>div{background:#fff;border-radius:14px;width:100%;max-width:440px;max-height:92vh;overflow:auto;padding:20px}.modal h3{margin-bottom:6px}
+.est{background:#e8f3ec;border-radius:8px;padding:10px;margin-top:10px;font-weight:700}
+canvas{width:100%;height:250px;display:block}.lg i{display:inline-block;width:10px;height:10px;border-radius:2px;margin:0 4px 0 12px}
+.tabs button{background:none;border:0;border-bottom:2px solid transparent;padding:8px 14px;font:700 12px inherit;color:var(--mut);cursor:pointer}.tabs button.on{color:var(--pine);border-color:var(--brass)}
+#toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 18px;border-radius:8px;display:none;z-index:99}
+#login{position:fixed;inset:0;background:var(--pine);display:flex;align-items:center;justify-content:center;z-index:90;padding:14px}#login .card{max-width:360px;width:100%}
+.rc{font-family:monospace;font-size:13px}.rc hr{border:0;border-top:1px dashed #999;margin:8px 0}
+@media print{body.printing>*:not(#m-rc){display:none!important}body.printing #m-rc{display:block;position:static;background:none}body.printing #m-rc button{display:none}}
+</style></head><body>
+<header><div class="top"><div><h1>ClearScore Lodge Manager</h1><small>22 rooms &bull; works fully offline</small></div><div class="row"></div></div><nav id="nav"></nav></header>
+<main><div id="al"></div><div id="v"></div></main><div id="toast"></div>
+
+<div class="modal" id="m-room"><div><h3 id="rt">Room</h3><input type="hidden" id="rn">
+<label>Nightly rate (K)</label><input id="rp" type="number" min="0" step="0.01" oninput="est()">
+<label>Status</label><select id="rs" onchange="est()"><option>Available</option><option>Occupied</option><option>Cleaning</option></select>
+<div id="gf"><label>Guest name</label><input id="rg"><label>Phone / ID</label><input id="rph"><label>Check-in</label><input id="rci" type="datetime-local" onchange="est()"><label>Notes</label><input id="rno">
+<div class="est"><div class="row sp"><span>Nights so far</span><span id="en"></span></div><label>Extra charges (K)</label><input id="rx" type="number" min="0" step="0.01" value="0" oninput="est()"><label>Payment method</label><select id="rm"><option>Cash</option><option>Mobile Money</option><option>Card</option><option>Bank</option></select>
+<div class="row sp" style="margin-top:8px"><span>Total due</span><span id="et" class="big"></span></div></div></div>
+<div class="row sp" style="margin-top:16px"><button class="b alt" onclick="cm('m-room')">Cancel</button><div class="row"><button id="rco" class="b ok" style="background:var(--ok)" onclick="checkout()">Check-out &amp; log</button><button class="b" onclick="saveRoom()">Save</button></div></div></div></div>
+
+<div class="modal" id="m-stock"><div><h3>Add stock item</h3><form onsubmit="addItem(event)"><label>Name</label><input id="in" required><div class="row"><div style="flex:1"><label>Qty</label><input id="iq" type="number" min="0" value="10" required></div><div style="flex:1"><label>Unit</label><input id="iu" placeholder="Packs"></div></div><label>Alert at or below</label><input id="im" type="number" min="0" value="3" required>
+<div class="row sp" style="margin-top:16px"><button type="button" class="b alt" onclick="cm('m-stock')">Cancel</button><button class="b">Save</button></div></form></div></div>
+
+<div class="modal" id="m-adj"><div><h3 id="at"></h3><form onsubmit="adj(event)"><input type="hidden" id="ai"><input type="hidden" id="as"><label>Quantity</label><input id="aq" type="number" min="1" value="1" required>
+<div class="row sp" style="margin-top:16px"><button type="button" class="b alt" onclick="cm('m-adj')">Cancel</button><button class="b">Confirm</button></div></form></div></div>
+
+<div class="modal" id="m-exp"><div><h3>Record expense</h3><form onsubmit="addExp(event)"><label>Category</label><select id="ec" onchange="$('el').style.display=this.value=='Stock Purchase'?'block':'none'"><option>Maintenance</option><option>Stock Purchase</option><option>ZESCO Power</option><option>Salaries</option><option>Food &amp; Kitchen</option><option>Other</option></select>
+<div id="el" style="display:none"><label>Restock item</label><select id="es"></select><label>Quantity added</label><input id="eq" type="number" min="0" value="0"></div>
+<label>Description</label><input id="ed" required><div class="row"><div style="flex:1"><label>Amount (K)</label><input id="ea" type="number" min="0.01" step="0.01" required></div><div style="flex:1"><label>Date</label><input id="edt" type="date" required></div></div>
+<div class="row sp" style="margin-top:16px"><button type="button" class="b alt" onclick="cm('m-exp')">Cancel</button><button class="b">Save</button></div></form></div></div>
+
+<div class="modal" id="m-pw"><div><h3 id="pt">Change password</h3><form onsubmit="setPw(event)"><input type="hidden" id="pid"><label>New password (min 6 characters)</label><input id="pn" type="password" minlength="6" required>
+<div class="row sp" style="margin-top:16px"><button type="button" class="b alt" onclick="cm('m-pw')">Cancel</button><button class="b">Update</button></div></form></div></div>
+
+<div class="modal" id="m-rc"><div><div class="rc" id="rcb"></div><div class="row sp" style="margin-top:14px"><button class="b alt" onclick="cm('m-rc')">Close</button><button class="b" onclick="printRc()">Print</button></div></div></div>
+<script>
+const N=22,KEY='clearscore_lodge_data',$=id=>document.getElementById(id);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const K=n=>'K'+(+n||0).toLocaleString('en',{minimumFractionDigits:2,maximumFractionDigits:2});
+const pad=n=>String(n).padStart(2,'0'),dstr=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`,dtl=d=>dstr(d)+'T'+pad(d.getHours())+':'+pad(d.getMinutes());
+const tm=d=>+new Date(String(d).length==10?d+'T00:00':d),inR=(d,a,b)=>{const t=tm(d);return t>=a&&t<b};
+const tot=(arr,a,b,k='amount')=>arr.reduce((s,x)=>inR(x.date,a,b)?s+(+x[k]||0):s,0);
+async function sha(s){s='cs|'+s;if(crypto&&crypto.subtle){return[...new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s)))].map(b=>b.toString(16).padStart(2,'0')).join('')}let h=5381;for(const c of s)h=(h*33^c.charCodeAt(0))>>>0;return'x'+h}
+function toast(m){const t=$('toast');t.textContent=m;t.style.display='block';clearTimeout(t._t);t._t=setTimeout(()=>t.style.display='none',2800)}
+const om=id=>$(id).classList.add('on'),cm=id=>$(id).classList.remove('on');
+addEventListener('keydown',e=>{if(e.key=='Escape')document.querySelectorAll('.modal.on').forEach(m=>m.classList.remove('on'))});
+let D,me=null,tab='dashboard',per='daily',rf={q:'',s:''},lf={q:'',a:'',b:''},fails=0,lockTill=0;
+const V={},TABS=[['dashboard','Dashboard'],['rooms','Rooms'],['stock','Stock'],['expenses','Expenses'],['reports','Reports'],['ledger','Ledger'],['admin','Admin'],['settings','Settings']];
+const blank=()=>({v:2,rooms:[],inventory:[{id:'i1',name:'Tea Bags (Box)',qty:15,unit:'Boxes',min:4},{id:'i2',name:'Sugar 2kg',qty:8,unit:'Packs',min:3},{id:'i3',name:'Bathing Soap',qty:25,unit:'Bars',min:10},{id:'i4',name:'Toilet Roll',qty:40,unit:'Rolls',min:12}],transactions:[],expenses:[],admins:[],snapshots:[],lastBackup:0});
+async function norm(d){d.transactions||=[];d.expenses||=[];d.inventory||=[];d.admins||=[];d.snapshots||=d.savedSnapshots||[];delete d.savedSnapshots;
+const o=d.rooms||[];d.rooms=Array.from({length:N},(_,i)=>o.find(r=>r.number==i+1)||{number:i+1,price:350,status:'Available',guestName:'',checkInDate:''});
+for(const a of d.admins){if(a.password){a.hash=await sha(a.password);delete a.password}if(typeof a.level=='string')a.level=a.level.includes('1')?1:2}
+if(!d.admins.length)d.admins.push({id:'adm_1',username:'admin1',hash:await sha('password123'),level:1,def:true});d.v=2;return d}
+function save(){try{localStorage[KEY]=JSON.stringify(D)}catch(e){toast('Cannot save: storage full or blocked!')}render()}
+async function load(){let d=null;try{d=JSON.parse(localStorage[KEY])}catch(e){}D=await norm(d&&d.rooms?d:blank());try{localStorage[KEY]=JSON.stringify(D)}catch(e){}
+me={id:'owner',username:'owner',level:1};boot()}
+function boot(){render()}
+const low=()=>D.inventory.filter(i=>i.qty<=i.min);
+function render(){if(!me)return;$('nav').innerHTML=TABS.filter(t=>!t[2]||me.level==1).map(t=>`<button class="${t[0]==tab?'on':''}" onclick="go('${t[0]}')">${t[1]}${t[0]=='stock'&&low().length?`<b class="bd">${low().length}</b>`:''}</button>`).join('');
+let a='';if(low().length)a+=`<div class="alert"><b>Low stock:</b> ${low().map(i=>esc(i.name)+' ('+i.qty+')').join(', ')}</div>`;
+if(D.transactions.length&&Date.now()-D.lastBackup>6048e5)a+=`<div class="alert y">No backup in over 7 days. <a href="#" onclick="go('settings');return false">Download a backup</a> and keep it on a flash drive or phone.</div>`;
+$('al').innerHTML=a;V[tab]()}
+function go(t){tab=t;render();scrollTo(0,0)}
+function ranges(p){const n=new Date(),y=n.getFullYear(),m=n.getMonth(),d=n.getDate(),wd=(n.getDay()+6)%7,B=[];
+if(p=='daily')for(let i=-6;i<=0;i++){const a=new Date(y,m,d+i);B.push([a,new Date(y,m,d+i+1),a.toLocaleDateString('en',{weekday:'short'})+' '+a.getDate()])}
+else if(p=='weekly')for(let i=-7;i<=0;i++){const a=new Date(y,m,d-wd+7*i);B.push([a,new Date(y,m,d-wd+7*i+7),a.getDate()+'/'+(a.getMonth()+1)])}
+else if(p=='monthly')for(let i=-5;i<=0;i++){const a=new Date(y,m+i,1);B.push([a,new Date(y,m+i+1,1),a.toLocaleDateString('en',{month:'short'})])}
+else for(let i=0;i<12;i++){const a=new Date(y,i,1);B.push([a,new Date(y,i+1,1),a.toLocaleDateString('en',{month:'short'})])}
+return B}
+function chart(cv,labels,S){const r=devicePixelRatio||1,w=cv.clientWidth,h=cv.clientHeight;cv.width=w*r;cv.height=h*r;const c=cv.getContext('2d');c.scale(r,r);
+const max=Math.max(1,...S.flatMap(s=>s.v)),L=46,Bt=22,T=8,pw=w-L-6,ph=h-Bt-T,sh=n=>n>=1e3?(n/1e3).toFixed(n>=1e4?0:1)+'k':Math.round(n);c.font='11px system-ui';c.strokeStyle='#e3ddd0';
+for(let i=0;i<=4;i++){const y=T+ph-ph*i/4;c.beginPath();c.moveTo(L,y);c.lineTo(w,y);c.stroke();c.fillStyle='#6b7a72';c.textAlign='right';c.fillText(sh(max*i/4),L-6,y+4)}
+const g=pw/labels.length,bw=Math.min(26,g/(S.length+1));labels.forEach((l,i)=>{c.fillStyle='#6b7a72';c.textAlign='center';c.fillText(l,L+g*i+g/2,h-6);S.forEach((s,j)=>{c.fillStyle=s.c;const bh=ph*Math.max(0,s.v[i])/max;c.fillRect(L+g*i+g/2-bw*S.length/2+bw*j,T+ph-bh,bw-2,bh)})})}
+const legend=S=>`<div class="lg mut">${S.map(s=>`<i style="background:${s.c}"></i>${s.n}`).join('')}</div>`;
+const card=(l,v,s,c='')=>`<div class="card kpi"><small>${l}</small><div class="big ${c}">${v}</div><div class="mut">${s||''}</div></div>`;
+const nights=ci=>ci?Math.max(1,Math.ceil((Date.now()-new Date(ci))/864e5)):1;
+
+V.dashboard=()=>{const n=new Date(),y=n.getFullYear(),m=n.getMonth(),d=n.getDate(),wd=(n.getDay()+6)%7,T=D.transactions,
+t0=new Date(y,m,d),t1=new Date(y,m,d+1),w0=new Date(y,m,d-wd),m0=new Date(y,m,1),m1=new Date(y,m+1,1),cnt=s=>D.rooms.filter(r=>r.status==s).length,occ=cnt('Occupied'),mi=tot(T,m0,m1),me_=tot(D.expenses,m0,m1),oc=D.rooms.filter(r=>r.status=='Occupied');
+$('v').innerHTML=`<div class="grid g4">${card('Occupancy',Math.round(occ/N*100)+'%',`${occ} occupied &bull; ${cnt('Available')} free &bull; ${cnt('Cleaning')} cleaning`)}${card("Today's revenue",K(tot(T,t0,t1)),'Check-outs today','ok')}${card('This week',K(tot(T,w0,t1)),'Monday to now')}${card('Month profit',K(mi-me_),`Income ${K(mi)} &minus; Expenses ${K(me_)}`,mi-me_<0?'bad':'ok')}</div>
+<div class="grid g2" style="margin-top:14px"><div class="card"><h3>Last 6 months</h3>${legend([{n:'Income'},{n:'Expenses'}].map((s,i)=>({n:s.n,c:['#2f8f5b','#c2410c'][i]})))}<canvas id="cv"></canvas></div>
+<div class="card"><h3>In-house guests</h3><div class="tw"><table>${oc.length?oc.map(r=>`<tr style="cursor:pointer" onclick="openRoom(${r.number})"><td><b>Rm ${r.number}</b></td><td>${esc(r.guestName)}</td><td class="r">${nights(r.checkInDate)}n &bull; ${K(nights(r.checkInDate)*r.price)}</td></tr>`).join(''):'<tr><td class="mut">No guests in house.</td></tr>'}</table></div></div></div>`;
+const B=ranges('monthly');chart($('cv'),B.map(b=>b[2]),[{c:'#2f8f5b',v:B.map(b=>tot(T,b[0],b[1]))},{c:'#c2410c',v:B.map(b=>tot(D.expenses,b[0],b[1]))}])};
+
+function drawRooms(){const q=rf.q.toLowerCase();const L=D.rooms.filter(r=>(!rf.s||r.status==rf.s)&&(!q||String(r.number)==q||(r.guestName||'').toLowerCase().includes(q)));
+$('rg_').innerHTML=L.map(r=>`<div class="card room ${r.status}" data-r="${r.number}"><div class="row sp"><b style="font-size:16px">Room ${r.number}</b><span class="tag ${r.status}">${r.status}</span></div><div class="mut">K${r.price}/night</div>${r.status=='Occupied'?`<div style="margin-top:6px"><b>${esc(r.guestName)}</b><div class="mut">${nights(r.checkInDate)} night(s) &bull; ${K(nights(r.checkInDate)*r.price)}</div></div>`:''}</div>`).join('')||'<p class="mut">No rooms match.</p>'}
+V.rooms=()=>{$('v').innerHTML=`<div class="card row sp"><div class="row" style="flex:1"><input style="max-width:220px" placeholder="Search room # or guest" value="${esc(rf.q)}" oninput="rf.q=this.value;drawRooms()"><select style="max-width:150px" onchange="rf.s=this.value;drawRooms()">${['','Available','Occupied','Cleaning'].map(s=>`<option value="${s}" ${rf.s==s?'selected':''}>${s||'All statuses'}</option>`).join('')}</select></div><button class="b alt" onclick="clearClean()">Mark all cleaning &rarr; available</button></div><div id="rg_" class="grid rooms" style="margin-top:14px"></div>`;
+$('rg_').onclick=e=>{const c=e.target.closest('[data-r]');c&&openRoom(+c.dataset.r)};drawRooms()};
+function clearClean(){D.rooms.forEach(r=>{if(r.status=='Cleaning')r.status='Available'});save();toast('Cleaning rooms are now available')}
+function openRoom(n){const r=D.rooms.find(x=>x.number==n);$('rn').value=n;$('rt').textContent='Room '+n;$('rp').value=r.price;$('rs').value=r.status;$('rg').value=r.guestName||'';$('rph').value=r.phone||'';$('rno').value=r.notes||'';$('rci').value=r.checkInDate||dtl(new Date());$('rx').value=r.extras||0;$('rm').value=r.method||'Cash';est();om('m-room')}
+function stay(){const p=+$('rp').value||0,n=$('rs').value=='Occupied'?nights($('rci').value):0,x=+$('rx').value||0;return{n,p,x,t:n*p+x}}
+function est(){const o=$('rs').value=='Occupied';$('gf').style.display=o?'block':'none';$('rco').style.display=o?'':'none';const s=stay();$('en').textContent=s.n;$('et').textContent=K(s.t)}
+function saveRoom(){const r=D.rooms.find(x=>x.number==$('rn').value),ns=$('rs').value;
+if(r.status=='Occupied'&&ns!='Occupied'&&!confirm('This guest is still checked in. Changing the status will discard the stay WITHOUT recording revenue.\n\nUse "Check-out & log" to bill them. Discard anyway?'))return;
+r.price=+$('rp').value||350;r.status=ns;if(ns=='Occupied'){r.guestName=$('rg').value.trim()||'Guest';r.phone=$('rph').value.trim();r.notes=$('rno').value.trim();r.checkInDate=$('rci').value;r.extras=+$('rx').value||0;r.method=$('rm').value}else{r.guestName=r.phone=r.notes=r.checkInDate='';r.extras=0}save();cm('m-room');toast('Room '+r.number+' saved')}
+function checkout(){const r=D.rooms.find(x=>x.number==$('rn').value),s=stay(),tx={id:'tx_'+Date.now(),date:new Date().toISOString(),roomNumber:r.number,guestName:$('rg').value.trim()||'Guest',phone:$('rph').value.trim(),checkInDate:$('rci').value,daysStayed:s.n,pricePerNight:s.p,extras:s.x,method:$('rm').value,amount:s.t};
+D.transactions.push(tx);Object.assign(r,{status:'Cleaning',guestName:'',phone:'',notes:'',checkInDate:'',extras:0});save();cm('m-room');receipt(tx.id)}
+function receipt(id){const t=D.transactions.find(x=>x.id==id);if(!t)return;$('rcb').innerHTML=`<h3 style="text-align:center">ClearScore Lodge</h3><div style="text-align:center">Receipt #${t.id.slice(3)}</div><hr>Guest: ${esc(t.guestName)}<br>Room: ${t.roomNumber}<br>In: ${t.checkInDate?new Date(t.checkInDate).toLocaleString():'-'}<br>Out: ${new Date(t.date).toLocaleString()}<hr>${t.daysStayed} night(s) x ${K(t.pricePerNight)}<br>Extras: ${K(t.extras||0)}<br>Paid by: ${esc(t.method||'Cash')}<hr><b>TOTAL ${K(t.amount)}</b><br><br><div style="text-align:center">Thank you for staying with us!</div>`;om('m-rc')}
+function printRc(){document.body.classList.add('printing');print();document.body.classList.remove('printing')}
+
+V.stock=()=>{$('v').innerHTML=`<div class="card row sp"><h3>Stock &amp; inventory</h3><button class="b" onclick="om('m-stock')">+ Add item</button></div><div class="card tw" style="margin-top:14px;padding:0"><table><tr><th>Item</th><th>In stock</th><th>Alert at</th><th>Status</th><th class="r">Actions</th></tr>${D.inventory.map(i=>{const l=i.qty<=i.min;return`<tr style="${l?'background:#fdece3':''}"><td><b>${esc(i.name)}</b></td><td class="${l?'bad':''}"><b>${i.qty}</b> ${esc(i.unit)}</td><td>${i.min}</td><td>${l?'<span class="tag Occupied">Low</span>':'<span class="tag">OK</span>'}</td><td class="r"><button class="b sm" onclick="openAdj('${i.id}',-1)">Use</button> <button class="b sm gold" onclick="openAdj('${i.id}',1)">Restock</button> <button class="b sm alt" onclick="delItem('${i.id}')">&#128465;</button></td></tr>`}).join('')||'<tr><td colspan="5" class="mut c">No items yet.</td></tr>'}</table></div>`};
+function addItem(e){e.preventDefault();D.inventory.push({id:'i'+Date.now(),name:$('in').value.trim(),qty:+$('iq').value||0,unit:$('iu').value.trim(),min:+$('im').value||0});e.target.reset();cm('m-stock');save()}
+function openAdj(id,s){const i=D.inventory.find(x=>x.id==id);$('ai').value=id;$('as').value=s;$('at').textContent=(s<0?'Use: ':'Restock: ')+i.name;$('aq').value=1;om('m-adj')}
+function adj(e){e.preventDefault();const i=D.inventory.find(x=>x.id==$('ai').value),q=+$('aq').value||0,s=+$('as').value;if(s<0&&q>i.qty)return toast('Only '+i.qty+' in stock');i.qty+=s*q;cm('m-adj');save()}
+function delItem(id){if(confirm('Delete this stock item?')){D.inventory=D.inventory.filter(i=>i.id!=id);save()}}
+
+let em=dstr(new Date()).slice(0,7);
+V.expenses=()=>{const L=D.expenses.filter(e=>!em||e.date.startsWith(em)).sort((a,b)=>b.date.localeCompare(a.date)),T=L.reduce((s,e)=>s+e.amount,0);
+$('v').innerHTML=`<div class="card row sp"><div class="row"><h3>Expenses</h3><input type="month" style="width:auto" value="${em}" onchange="em=this.value;V.expenses()"></div><div class="row"><b class="bad">${K(T)}</b><button class="b" onclick="openExp()">+ Record expense</button></div></div><div class="card tw" style="margin-top:14px;padding:0"><table><tr><th>Date</th><th>Category</th><th>Description</th><th class="r">Amount</th><th></th></tr>${L.map(e=>`<tr><td>${e.date}</td><td><span class="tag">${esc(e.category)}</span></td><td>${esc(e.description)}</td><td class="r bad"><b>${K(e.amount)}</b></td><td class="c">${me.level==1?`<button class="b sm alt" onclick="delExp('${e.id}')">&#128465;</button>`:''}</td></tr>`).join('')||'<tr><td colspan="5" class="mut c">No expenses this month.</td></tr>'}</table></div>`};
+function openExp(){$('es').innerHTML='<option value="">-- None --</option>'+D.inventory.map(i=>`<option value="${i.id}">${esc(i.name)} (${i.qty})</option>`).join('');$('edt').value=dstr(new Date());om('m-exp')}
+function addExp(e){e.preventDefault();const c=$('ec').value,id=$('es').value,q=+$('eq').value||0;if(c=='Stock Purchase'&&id&&q>0)D.inventory.find(i=>i.id==id).qty+=q;
+D.expenses.push({id:'e'+Date.now(),category:c,description:$('ed').value.trim(),amount:+$('ea').value,date:$('edt').value});e.target.reset();$('el').style.display='none';cm('m-exp');save();toast('Expense saved')}
+function delExp(id){if(confirm('Delete this expense?')){D.expenses=D.expenses.filter(e=>e.id!=id);save()}}
+
+function repData(){const B=ranges(per),k=per=='yearly'?[B[0][0],B[11][1]]:[B[B.length-1][0],B[B.length-1][1]],tx=D.transactions.filter(t=>inR(t.date,k[0],k[1])),ex=D.expenses.filter(e=>inR(e.date,k[0],k[1]));return{B,k,tx,ex,inc:tx.reduce((s,t)=>s+t.amount,0),exp:ex.reduce((s,e)=>s+e.amount,0),days:Math.round((k[1]-k[0])/864e5)}}
+V.reports=()=>{const r=repData(),net=r.inc-r.exp,best={},cat={};r.tx.forEach(t=>best[t.roomNumber]=(best[t.roomNumber]||0)+t.amount);r.ex.forEach(e=>cat[e.category]=(cat[e.category]||0)+e.amount);
+const top=o=>Object.entries(o).sort((a,b)=>b[1]-a[1])[0],br=top(best),bc=top(cat),occ=Math.min(100,Math.round(r.tx.reduce((s,t)=>s+(t.daysStayed||1),0)/(N*r.days)*100));
+$('v').innerHTML=`<div class="card row sp"><div class="tabs">${['daily','weekly','monthly','yearly'].map(p=>`<button class="${p==per?'on':''}" onclick="per='${p}';V.reports()">${p[0].toUpperCase()+p.slice(1)}</button>`).join('')}</div><div class="row"><button class="b alt" onclick="snap()">Save snapshot</button><button class="b" onclick="exportReport()">Export CSV</button></div></div>
+<div class="grid g4" style="margin-top:14px">${card('Revenue',K(r.inc),'','ok')}${card('Expenses',K(r.exp),'','bad')}${card('Net profit',K(net),'',net<0?'bad':'ok')}${card('Margin',r.inc?(net/r.inc*100).toFixed(1)+'%':'0%')}</div>
+<div class="grid g2" style="margin-top:14px"><div class="card"><h3>Trend</h3>${legend([{n:'Income',c:'#2f8f5b'},{n:'Expenses',c:'#c2410c'}])}<canvas id="cv"></canvas></div><div class="card"><h3>Insights</h3><p class="mut">Best room</p><b>${br?'Room '+br[0]+' ('+K(br[1])+')':'--'}</b><p class="mut" style="margin-top:8px">Biggest expense</p><b>${bc?esc(bc[0])+' ('+K(bc[1])+')':'--'}</b><p class="mut" style="margin-top:8px">Average daily income</p><b>${K(r.inc/r.days)}</b><p class="mut" style="margin-top:8px">Occupancy (room-nights)</p><b>${occ}%</b></div></div>
+<div class="card" style="margin-top:14px"><h3>Saved snapshots</h3>${D.snapshots.map(s=>`<div class="row sp" style="border-top:1px solid var(--line);padding:8px 0"><span>${esc(s.label)} &mdash; ${K(s.inc)} in, ${K(s.exp)} out, <b>${K(s.inc-s.exp)}</b> net</span>${me.level==1?`<button class="b sm alt" onclick="delSnap('${s.id}')">&#128465;</button>`:''}</div>`).join('')||'<p class="mut">None saved yet.</p>'}</div>`;
+chart($('cv'),r.B.map(b=>b[2]),[{c:'#2f8f5b',v:r.B.map(b=>tot(D.transactions,b[0],b[1]))},{c:'#c2410c',v:r.B.map(b=>tot(D.expenses,b[0],b[1]))}])};
+function snap(){const r=repData();D.snapshots.unshift({id:'s'+Date.now(),label:per+' ('+dstr(r.k[0])+')',inc:r.inc,exp:r.exp});save();toast('Snapshot saved')}
+function delSnap(id){D.snapshots=D.snapshots.filter(s=>s.id!=id);save()}
+const csv=R=>'\ufeff'+R.map(r=>r.map(v=>{v=v??'';if(typeof v=='string'&&/^[=+\-@]/.test(v))v="'"+v;return'"'+String(v).replace(/"/g,'""')+'"'}).join(',')).join('\r\n');
+function dl(name,text,type){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type}));a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},500)}
+function exportReport(){const r=repData();if(!r.tx.length&&!r.ex.length)return toast('Nothing to export for this period');dl(`Report_${per}_${dstr(new Date())}.csv`,csv([['Type','Date','Description','Room','Amount (ZMW)'],...r.tx.map(t=>['Income',dstr(new Date(t.date)),t.guestName,t.roomNumber,t.amount]),...r.ex.map(e=>['Expense',e.date,e.category+' - '+e.description,'',-e.amount]),['','','TOTAL NET','',r.inc-r.exp]]),'text/csv')}
+
+function ledgerList(){const q=lf.q.toLowerCase(),a=lf.a?tm(lf.a+'T00:00'):0,b=lf.b?tm(lf.b+'T23:59:59'):1e15;return D.transactions.filter(t=>(!q||(t.guestName||'').toLowerCase().includes(q)||String(t.roomNumber)==q)&&tm(t.date)>=a&&tm(t.date)<=b).sort((x,y)=>tm(y.date)-tm(x.date))}
+function drawLedger(){const L=ledgerList(),T=L.reduce((s,t)=>s+t.amount,0);$('lk').innerHTML=`${L.length} guests &bull; <b class="ok">${K(T)}</b> &bull; avg stay ${L.length?(L.reduce((s,t)=>s+(t.daysStayed||1),0)/L.length).toFixed(1):0} nights`;
+$('lb').innerHTML=L.slice(0,300).map(t=>`<tr><td>${new Date(t.date).toLocaleString([],{dateStyle:'short',timeStyle:'short'})}</td><td><b>${esc(t.guestName)}</b><div class="mut">${esc(t.phone||'')}</div></td><td>Rm ${t.roomNumber}</td><td class="c">${t.daysStayed||1}</td><td class="r">${K(t.pricePerNight)}</td><td class="r ok"><b>${K(t.amount)}</b></td><td class="c"><button class="b sm alt" onclick="receipt('${t.id}')">Receipt</button> ${me.level==1?`<button class="b sm alt" onclick="delTx('${t.id}')">&#128465;</button>`:''}</td></tr>`).join('')||'<tr><td colspan="7" class="mut c">No records match.</td></tr>'+(L.length>300?'':'')}
+V.ledger=()=>{$('v').innerHTML=`<div class="card row sp"><div class="row"><input style="width:200px" placeholder="Guest or room #" value="${esc(lf.q)}" oninput="lf.q=this.value;drawLedger()"><input type="date" style="width:auto" value="${lf.a}" onchange="lf.a=this.value;drawLedger()"><input type="date" style="width:auto" value="${lf.b}" onchange="lf.b=this.value;drawLedger()"></div><button class="b" onclick="exportLedger()">Download CSV</button></div><p id="lk" style="margin:10px 4px"></p><div class="card tw" style="padding:0"><table><tr><th>Checked out</th><th>Guest</th><th>Room</th><th class="c">Nights</th><th class="r">Rate</th><th class="r">Total</th><th></th></tr><tbody id="lb"></tbody></table></div>`;drawLedger()};
+function delTx(id){if(confirm('Delete this record? Financial reports will change.')){D.transactions=D.transactions.filter(t=>t.id!=id);save()}}
+function exportLedger(){const L=ledgerList();if(!L.length)return toast('No records to export');dl(`Checkout_Ledger_${dstr(new Date())}.csv`,csv([['Checkout','Guest','Phone','Room','Check-in','Nights','Rate','Extras','Method','Total'],...L.map(t=>[new Date(t.date).toLocaleString(),t.guestName,t.phone||'',t.roomNumber,t.checkInDate?t.checkInDate.slice(0,10):'',t.daysStayed,t.pricePerNight,t.extras||0,t.method||'',t.amount]),['','','','','','','','','TOTAL',L.reduce((s,t)=>s+t.amount,0)]]),'text/csv')}
+
+V.admin=()=>{$('v').innerHTML=`<div class="grid g2"><div class="grid" style="align-content:start">${D.admins.map((a,i)=>`<div class="card row sp"><div><b>${esc(a.username)}</b> ${a.id==me.id?'<span class="tag">You</span>':''}<div class="mut">${a.level==1?'Level 1: Master Control':'Level 2: Lodge Manager'}</div></div><div class="row"><button class="b sm alt" onclick="pw('${a.id}')">Password</button>${a.id!=me.id?`<button class="b sm red" onclick="delAdmin('${a.id}')">Delete</button>`:''}</div></div>`).join('')}
+<div class="card mut"><b>Level 1</b> can do everything, including admins, restore and reset. <b>Level 2</b> handles guests, stock and expenses but cannot delete records or change system settings.</div></div>
+<form class="card" onsubmit="addAdmin(event)"><h3>New admin (${D.admins.length}/2)</h3><label>Username</label><input id="au" required><label>Password (min 6)</label><input id="ap" type="password" minlength="6" required><label>Level</label><select id="al_"><option value="1">Level 1: Master Control</option><option value="2" selected>Level 2: Lodge Manager</option></select><button class="b" style="width:100%;margin-top:14px" ${D.admins.length>=2?'disabled':''}>Create</button></form></div>`};
+async function addAdmin(e){e.preventDefault();const u=$('au').value.trim();if(D.admins.length>=2)return toast('Maximum 2 admins');if(D.admins.some(a=>a.username.toLowerCase()==u.toLowerCase()))return toast('Username already exists');D.admins.push({id:'adm_'+Date.now(),username:u,hash:await sha($('ap').value),level:+$('al_').value});save();toast('Admin created')}
+function delAdmin(id){const a=D.admins.find(x=>x.id==id);if(a.level==1&&D.admins.filter(x=>x.level==1).length<2)return toast('Keep at least one Level 1 admin');if(confirm('Delete '+a.username+'?')){D.admins=D.admins.filter(x=>x.id!=id);save()}}
+function pw(id){if(me.level!=1&&id!=me.id)return;$('pid').value=id;$('pn').value='';$('pt').textContent='Password for '+D.admins.find(a=>a.id==id).username;om('m-pw')}
+async function setPw(e){e.preventDefault();const a=D.admins.find(x=>x.id==$('pid').value);a.hash=await sha($('pn').value);delete a.def;cm('m-pw');save();toast('Password updated')}
+
+V.settings=()=>{const L1=me.level==1;$('v').innerHTML=`<div class="grid" style="max-width:720px">${L1?`<div class="card"><h3>Room pricing</h3><div class="row"><input id="gp" type="number" min="0" value="350" style="width:140px"><button class="b" onclick="allPrice()">Set price for all 22 rooms</button></div></div>`:''}
+<div class="card"><h3>Backup &amp; restore</h3><p class="mut">Last backup: ${D.lastBackup?new Date(D.lastBackup).toLocaleString():'never'}. Browser data can be lost if the browser is cleared, so back up weekly.</p><div class="row" style="margin-top:8px"><button class="b" onclick="backup()">Download backup</button>${L1?`<label class="b alt" style="margin:0;text-transform:none;font-size:13px;cursor:pointer">Restore from file<input type="file" accept=".json" hidden onchange="restore(event)"></label><button class="b red" onclick="reset()">Factory reset</button>`:''}</div></div></div>`};
+function allPrice(){const p=+$('gp').value;if(p>0&&confirm('Set all rooms to K'+p+'?')){D.rooms.forEach(r=>r.price=p);save();toast('Prices updated')}}
+function backup(){D.lastBackup=Date.now();try{localStorage[KEY]=JSON.stringify(D)}catch(e){}dl(`Lodge_Backup_${dstr(new Date())}.json`,JSON.stringify(D,null,1),'application/json');render()}
+function restore(e){const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=async()=>{try{const p=JSON.parse(r.result);if(!p.rooms||!p.inventory)throw 0;if(!confirm('Replace ALL current data with this backup?'))return;D=await norm(p);save();toast('Backup restored')}catch(x){toast('Invalid backup file')}};r.readAsText(f)}
+async function reset(){if(prompt('This erases EVERYTHING. Type DELETE to confirm')!='DELETE')return;D=await norm(blank());save();toast('Factory reset complete')}
+
+let unl=false;const persist=()=>{try{localStorage[KEY]=JSON.stringify(D);toast('Saved')}catch(e){toast('Cannot save')}};
+V.admin=()=>{if(D.pin&&!unl){$('v').innerHTML=`<form class="card" style="max-width:340px;margin:30px auto" onsubmit="unlock(event)"><h3>Admin PIN</h3><label>Enter PIN</label><input id="apin" type="password" inputmode="numeric" required><button class="b" style="width:100%;margin-top:12px">Unlock</button></form>`;return}
+const kb=Math.round(JSON.stringify(D).length/1024);
+$('v').innerHTML=`<div class="grid g4">${card('Check-out records',D.transactions.length,'in ledger')}${card('Expenses',D.expenses.length,'entries')}${card('Stock items',D.inventory.length,'tracked')}${card('Storage used',kb+' KB','browser limit is about 5000 KB')}</div>
+<div class="grid g2" style="margin-top:14px"><div class="card"><h3>Room prices</h3><p class="mut">Change any room's nightly rate. Saves as you edit.</p><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px">${D.rooms.map(r=>`<div><label style="margin-top:6px">Room ${r.number}</label><input type="number" min="0" value="${r.price}" onchange="D.rooms[${r.number-1}].price=+this.value||0;persist()"></div>`).join('')}</div></div>
+<div class="grid" style="align-content:start"><div class="card"><h3>Admin PIN</h3><p class="mut">${D.pin?'A PIN protects this page.':'No PIN set: anyone can open this page.'}</p><input id="npin" type="password" inputmode="numeric" placeholder="New PIN (4+ digits)" style="margin:8px 0"><div class="row"><button class="b" onclick="setPin()">Save PIN</button>${D.pin?'<button class="b alt" onclick="setPin(1)">Remove PIN</button>':''}</div></div>
+<div class="card"><h3>Data tools</h3><p class="mut">Back up first from Settings.</p><div class="row" style="margin:8px 0"><select id="dz" style="width:auto"><option value="90">90 days</option><option value="180">180 days</option><option value="365">1 year</option></select><button class="b alt" onclick="purge()">Delete older records</button></div><div class="row"><button class="b alt" onclick="allAvail()">Set all rooms Available</button><button class="b red" onclick="wipe('transactions','all check-out records')">Clear ledger</button><button class="b red" onclick="wipe('expenses','all expenses')">Clear expenses</button></div></div></div></div>`};
+async function unlock(e){e.preventDefault();if(await sha($('apin').value)==D.pin){unl=true;render()}else toast('Wrong PIN')}
+async function setPin(rm){if(rm){if(!confirm('Remove the admin PIN?'))return;D.pin=''}else{const v=$('npin').value;if(!/^\d{4,}$/.test(v))return toast('PIN must be 4+ digits');D.pin=await sha(v);unl=true}save();toast(rm?'PIN removed':'PIN saved')}
+function purge(){const d=+$('dz').value,c=Date.now()-d*864e5,n=D.transactions.filter(t=>tm(t.date)<c).length+D.expenses.filter(e=>tm(e.date)<c).length;if(!n)return toast('Nothing older than that');if(!confirm('Delete '+n+' records and expenses older than '+d+' days? This cannot be undone.'))return;D.transactions=D.transactions.filter(t=>tm(t.date)>=c);D.expenses=D.expenses.filter(e=>tm(e.date)>=c);save();toast('Deleted '+n)}
+function wipe(k,l){if(prompt('Delete '+l+'? Type DELETE to confirm')!='DELETE')return;D[k]=[];save()}
+function allAvail(){if(!confirm('Mark ALL rooms Available? Guests still checked in will be discarded without billing.'))return;D.rooms.forEach(r=>Object.assign(r,{status:'Available',guestName:'',phone:'',notes:'',checkInDate:'',extras:0}));save()}
+addEventListener('resize',()=>{if(tab=='dashboard'||tab=='reports')render()});
+load();
+</script></body></html>
